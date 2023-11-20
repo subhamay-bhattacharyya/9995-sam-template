@@ -1,0 +1,30 @@
+{
+    "project-name": "template",
+    "stack-type":"",
+    "parameters": {
+        "devl": [
+            {
+                "Environment": "devl",
+                "LambdaFunctionBaseName": "lambda",
+                "LambdaExecutionRoleName": "lambda-execution-role",
+                "LambdaExecutionPolicyName": "lambda-policy"
+            }
+        ],
+        "test": [
+            {
+                "Environment": "test",
+                "LambdaFunctionBaseName": "lambda",
+                "LambdaExecutionRoleName": "lambda-execution-role",
+                "LambdaExecutionPolicyName": "lambda-policy"
+            }
+        ],
+        "prod": [
+            {
+                "Environment": "prod",
+                "LambdaFunctionBaseName": "lambda",
+                "LambdaExecutionRoleName": "lambda-execution-role",
+                "LambdaExecutionPolicyName": "lambda-policy"
+            }
+        ]
+    }
+}

@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Project Template: SAM Template to create a sample Lambda function.
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Environment Name
+    Default: devl
+  ProjectName:
+    Type: String
+    Description: Project Name
+    Default: taurus
+  LambdaFunctionBaseName: 
+    Type: String
+    Description: The Base Name Of The Lambda Function.
+    Default: demo-layer-lambda
+  LambdaExecutionRoleName:
+    Type: String
+    Description: The Name Of The Lambda Execution Role.
+    Default: lambda-execution-role
+  LambdaExecutionPolicyName:
+    Type: String
+    Description: The Name Of The Lambda Execution Policy.
+    Default: lambda-policy
+  GitHubURL:
+    Type: String
+    Description: GitHub Url.
+    Default: ""                          
+  GitHubRef:
+    Type: String
+    Description: GitHub Ref Name.
+    Default: ""
+  GitHubSHA:
+    Type: String
+    Description: GitHub SHA.
+    Default: ""
+  GitHubWFRunNumber:
+    Type: Number
+    Description: GitHub Workflow Run Number.
+    Default: 1
+  GitHubRepository:
+    Type: String
+    Description: GitHub Repository.
+    Default: ""
+  CodeRepositoryS3Bucket:
+    Type: String
+    Description: "S3 Bucket storing the code repository"
+    Default: ""
+  KmsMasterKeyId:
+    Type: String
+    Description: KMS Master Key Arn
+    Default: ""
+  CiBuild:
+    Type: String
+    Description: The CiBuild suffix
+    Default: ""
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+    Runtime: python3.9
+    Handler: sample-lambda.lambda_handler
+    Architectures:
+      - "x86_64"
+    Tags:
+      ProjectName: !Ref ProjectName
+      Environment: !Ref Environment
+      GitHubURL: !Ref GitHubURL
+      GitHubRef: !Ref GitHubRef
+      GitHubSHA: !Ref GitHubSHA
+      GitHubWFRunNumber: !Ref GitHubWFRunNumber
+      GitHubRepository: !Ref GitHubRepository
+Resources:
+  ###################################### Lambda Function ###########################################
+  TemplateLambdaIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${LambdaExecutionRoleName}-${Environment}${CiBuild}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub '${ProjectName}-${LambdaExecutionPolicyName}-${Environment}${CiBuild}'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Sid: AllowCloudWatchLogStream
+              Effect: Allow
+              Action: 
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-${LambdaFunctionBaseName}-${Environment}-${AWS::Region}${CiBuild}:*'
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key:  Environment
+          Value: !Ref Environment
+        - Key: GitHubURL
+          Value: !Ref GitHubURL
+        - Key: GitHubRef
+          Value: !Ref GitHubRef
+        - Key: GitHubSHA
+          Value: !Ref GitHubSHA
+        - Key: GitHubWFRunNumber
+          Value: !Ref GitHubWFRunNumber
+        - Key: GitHubRepository
+          Value: !Ref GitHubRepository
+  TemplateLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${LambdaFunctionBaseName}-${Environment}-${AWS::Region}${CiBuild}'
+      Description: 'Template Lambda Function'
+      Role: !GetAtt TemplateLambdaIAMRole.Arn
+      KmsKeyArn: !Ref KmsMasterKeyId
+      ReservedConcurrentExecutions: 1
+      CodeUri: ./code/python/.
+Outputs: 
+  TemplateLambdaExecutionRoleArn:
+    Description: "Template Lambda Function Execution Role Arn"
+    Value: !GetAtt TemplateLambdaIAMRole.Arn
+  TemplateLambdaFunction:
+    Description: "Template Lambda Function Arn"
+    Value: !GetAtt TemplateLambdaFunction.Arn
+ 

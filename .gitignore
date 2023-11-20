@@ -1,0 +1,5 @@
+sonar-scan.yaml
+.DS_Store
+*.toml
+change*
+script.*
